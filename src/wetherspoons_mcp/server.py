@@ -224,17 +224,42 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
         elif name == "get_menu_details":
             menu_id = arguments["menu_id"]
             result = get_menu(type('obj', (object,), {'id': menu_id}))
+            
+            # Build structured food output by category
+            food_categories = []
+            for category in result.data.get("categories", []):
+                items = []
+                for item_group in category.get("itemGroups", []):
+                    for item in item_group.get("items", []):
+                        # Get price from first portion option
+                        portions = item.get("portionOptions", [])
+                        price = None
+                        price_gbp = None
+                        if portions:
+                            price = portions[0].get("value", {}).get("price", {}).get("value")
+                            if price:
+                                price_gbp = f"£{price/100:.2f}"
+                        
+                        items.append({
+                            "name": item.get("name"),
+                            "price_pence": price,
+                            "price_gbp": price_gbp,
+                            "description": item.get("description", "")[:100]  # Truncate long descriptions
+                        })
+                
+                if items:  # Only add categories with items
+                    food_categories.append({
+                        "category": category.get("name"),
+                        "item_count": len(items),
+                        "items": items[:5]  # First 5 items per category
+                    })
+            
             return [TextContent(
                 type="text",
                 text=json.dumps({
-                    "categories_count": len(result.data.get("categories", [])),
-                    "categories": [
-                        {
-                            "name": c.get("name"),
-                            "item_groups_count": len(c.get("itemGroups", []))
-                        }
-                        for c in result.data.get("categories", [])[:5]
-                    ]
+                    "menu_name": result.data.get("name", "Unknown"),
+                    "categories_count": len(food_categories),
+                    "categories": food_categories[:10]  # Top 10 categories
                 }, indent=2)
             )]
 
