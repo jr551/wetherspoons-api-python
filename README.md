@@ -29,6 +29,31 @@ Users of this software are solely responsible for ensuring their use complies wi
 pip install wetherspoons-api-python
 ```
 
+## Claude Code Skill
+
+This repository includes a Claude Code skill at `claude-skill/SKILL.md` that enables Claude to access the Wetherspoons API.
+
+**To install the skill locally:**
+
+```bash
+# Create symlink to your Claude skills directory
+ln -s /path/to/wetherspoons-api-python/claude-skill ~/.claude/skills/spoons-api-unofficial
+```
+
+The skill allows Claude to:
+- Fetch Wetherspoons venue information
+- Get menu and drink data
+- Calculate price per unit for alcoholic beverages
+- Find the best value drinks
+
+**Usage in Claude Code:**
+Just ask Claude questions like:
+- "Show me all Wetherspoons venues"
+- "What are the cheapest drinks at Wetherspoons?"
+- "Compare the price per unit of different ales"
+
+Claude will automatically use the skill to fetch and analyze the data.
+
 Or for development:
 
 ```bash
