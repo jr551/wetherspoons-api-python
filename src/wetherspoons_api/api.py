@@ -155,8 +155,18 @@ def get_menu(high_level_menu: HighLevelMenu) -> DetailedMenu:
 
 
 def _strength_and_volume_to_units(strength: float, volume: float) -> float:
-    """Calculate alcohol units from strength (ABV) and volume (ml)"""
-    return (strength * volume) / 1000
+    """
+    Calculate alcohol units from strength (ABV %) and volume (ml).
+    
+    UK standard: 1 unit = 10ml of pure alcohol
+    Formula: units = (volume_ml × abv_percent) / 1000
+    
+    Examples:
+    - 25ml vodka at 40% = 1.0 unit
+    - 568ml pint at 4% = 2.27 units
+    - 175ml wine at 12% = 2.1 units
+    """
+    return (volume * strength) / 1000
 
 
 def get_drinks(high_level_venue: HighLevelVenue) -> List[Drink]:

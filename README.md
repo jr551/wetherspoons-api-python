@@ -130,6 +130,16 @@ print(drinks)
 # Sorted by best value (lowest price per unit first)
 ```
 
+**Alcohol Units Calculation (UK Standard):**
+- 1 unit = 10ml of pure alcohol
+- Formula: `units = (volume_ml × ABV%) / 1000`
+- Examples:
+  - 25ml vodka at 40% = 1.0 unit (standard single measure)
+  - 568ml pint at 4% = 2.27 units
+  - 175ml wine at 12% = 2.1 units
+
+**Price Per Unit (PPU):** Lower is better value. Calculated as `price_pence / units`.
+
 ### Get Menus
 
 ```python
