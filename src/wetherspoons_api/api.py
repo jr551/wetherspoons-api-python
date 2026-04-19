@@ -1,9 +1,13 @@
 """Core API functions for Wetherspoons API"""
 
 import json
+import os
 import re
+import random
+import time
 import requests
 from typing import List, Optional
+from functools import lru_cache
 from .models import (
     HighLevelVenue,
     DetailedVenue,
@@ -16,17 +20,81 @@ from .models import (
 )
 
 API_ENDPOINT = "https://ca.jdw-apps.net/api/v0.1"
-API_HEADERS = {
-    "Authorization": "Bearer 1|SFS9MMnn5deflq0BMcUTSijwSMBB4mc7NSG2rOhqb2765466",
-    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-}
+API_TOKEN = os.getenv("WETHERSPOONS_API_TOKEN", "1|SFS9MMnn5deflq0BMcUTSijwSMBB4mc7NSG2rOhqb2765466")
+
+# Pool of realistic mobile user agents for rotation
+USER_AGENTS = [
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36",
+    "Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 15_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6.1 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (Linux; Android 12; SM-S908B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36",
+    "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (Linux; Android 14; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36",
+]
+
+# Rate limiting configuration
+MIN_DELAY = 1.0  # Minimum delay between requests (seconds)
+MAX_DELAY = 3.0  # Maximum delay between requests (seconds)
+_last_request_time = 0
+
+def _get_random_user_agent() -> str:
+    """Get a random user agent from the pool"""
+    return random.choice(USER_AGENTS)
+
+def _rate_limit():
+    """Apply rate limiting with random delay"""
+    global _last_request_time
+    current_time = time.time()
+    time_since_last = current_time - _last_request_time
+    
+    if time_since_last < MIN_DELAY:
+        delay = random.uniform(MIN_DELAY, MAX_DELAY)
+        time.sleep(delay)
+    
+    _last_request_time = time.time()
 
 
-def _request(path: str) -> dict:
-    """Make a request to the Wetherspoons API"""
-    response = requests.get(f"{API_ENDPOINT}{path}", headers=API_HEADERS)
+def _request(path: str, use_cache: bool = True) -> dict:
+    """Make a request to the Wetherspoons API with rate limiting and random user agent"""
+    _rate_limit()
+    
+    headers = {
+        "Authorization": f"Bearer {API_TOKEN}",
+        "User-Agent": _get_random_user_agent(),
+    }
+    
+    response = requests.get(f"{API_ENDPOINT}{path}", headers=headers)
     response.raise_for_status()
     return response.json()
+
+
+@lru_cache(maxsize=128)
+def venues() -> List[HighLevelVenue]:
+    """Fetch all Wetherspoons venues (cached)"""
+    # Fetch globals to filter open venues
+    globals_response = requests.get(
+        "https://oandp-appmgr-prod.s3.eu-west-2.amazonaws.com/global.json"
+    )
+    globals_response.raise_for_status()
+    globals_data = globals_response.json()
+    
+    open_venue_ids = {v["identifier"] for v in globals_data.get("venues", [])}
+    
+    # Fetch venues from API
+    response = _request("/venues", use_cache=False)
+    venues_data = response.get("data", [])
+    
+    # Filter to only open venues
+    open_venues = []
+    for venue_data in venues_data:
+        if venue_data.get("venueRef") in open_venue_ids:
+            address = _parse_address(venue_data.get("address"))
+            venue_data["address"] = address
+            open_venues.append(HighLevelVenue(**venue_data))
+    
+    return open_venues
 
 
 def _parse_address(address_data: dict) -> Optional[Address]:
@@ -54,32 +122,6 @@ def _parse_address(address_data: dict) -> Optional[Address]:
         country=country,
         location=location,
     )
-
-
-def venues() -> List[HighLevelVenue]:
-    """Fetch all Wetherspoons venues"""
-    # Fetch globals to filter open venues
-    globals_response = requests.get(
-        "https://oandp-appmgr-prod.s3.eu-west-2.amazonaws.com/global.json"
-    )
-    globals_response.raise_for_status()
-    globals_data = globals_response.json()
-    
-    open_venue_ids = {v["identifier"] for v in globals_data.get("venues", [])}
-    
-    # Fetch venues from API
-    response = _request("/venues")
-    venues_data = response.get("data", [])
-    
-    # Filter to only open venues
-    open_venues = []
-    for venue_data in venues_data:
-        if venue_data.get("venueRef") in open_venue_ids:
-            address = _parse_address(venue_data.get("address"))
-            venue_data["address"] = address
-            open_venues.append(HighLevelVenue(**venue_data))
-    
-    return open_venues
 
 
 def get_venue(venue: HighLevelVenue) -> DetailedVenue:

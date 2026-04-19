@@ -4,6 +4,7 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 from wetherspoons_api import venues, get_venue, get_menus, get_menu, get_drinks
 from wetherspoons_api.models import HighLevelVenue, DetailedVenue, HighLevelMenu
+import time
 
 
 @pytest.fixture
@@ -151,8 +152,9 @@ def mock_detailed_menu_response():
 class TestVenues:
     """Test venues function"""
 
+    @patch("wetherspoons_api.api._rate_limit")
     @patch("wetherspoons_api.api.requests.get")
-    def test_venues_filters_open_venues(self, mock_get, mock_globals_response, mock_venues_response):
+    def test_venues_filters_open_venues(self, mock_get, mock_rate_limit, mock_globals_response, mock_venues_response):
         """Test that venues() filters to only open venues"""
         # Mock the globals response
         mock_globals = Mock()
@@ -169,8 +171,9 @@ class TestVenues:
         assert result[0].venue_ref == 456
         assert result[0].name == "The Moon Under Water"
 
+    @patch("wetherspoons_api.api._rate_limit")
     @patch("wetherspoons_api.api.requests.get")
-    def test_venues_parses_address(self, mock_get, mock_globals_response, mock_venues_response):
+    def test_venues_parses_address(self, mock_get, mock_rate_limit, mock_globals_response, mock_venues_response):
         """Test that venues() parses address data correctly"""
         mock_globals = Mock()
         mock_globals.json.return_value = mock_globals_response
@@ -190,8 +193,9 @@ class TestVenues:
 class TestGetVenue:
     """Test get_venue function"""
 
+    @patch("wetherspoons_api.api._rate_limit")
     @patch("wetherspoons_api.api._request")
-    def test_get_venue_parses_response(self, mock_request, mock_detailed_venue_response):
+    def test_get_venue_parses_response(self, mock_request, mock_rate_limit, mock_detailed_venue_response):
         """Test that get_venue() parses API response correctly"""
         mock_request.return_value = mock_detailed_venue_response
         
@@ -215,8 +219,9 @@ class TestGetVenue:
 class TestGetMenus:
     """Test get_menus function"""
 
+    @patch("wetherspoons_api.api._rate_limit")
     @patch("wetherspoons_api.api._request")
-    def test_get_menus_parses_response(self, mock_request, mock_menus_response):
+    def test_get_menus_parses_response(self, mock_request, mock_rate_limit, mock_menus_response):
         """Test that get_menus() parses API response correctly"""
         mock_request.return_value = mock_menus_response
         
@@ -238,11 +243,12 @@ class TestGetMenus:
 class TestGetDrinks:
     """Test get_drinks function"""
 
+    @patch("wetherspoons_api.api._rate_limit")
     @patch("wetherspoons_api.api.get_menu")
     @patch("wetherspoons_api.api.get_menus")
     @patch("wetherspoons_api.api.get_venue")
     def test_get_drinks_calculates_ppu(
-        self, mock_get_venue, mock_get_menus, mock_get_menu, mock_detailed_menu_response
+        self, mock_get_venue, mock_get_menus, mock_get_menu, mock_rate_limit, mock_detailed_menu_response
     ):
         """Test that get_drinks() calculates price per unit correctly"""
         mock_detailed_venue = DetailedVenue(
