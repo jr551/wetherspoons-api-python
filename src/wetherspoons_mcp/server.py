@@ -144,7 +144,11 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                             "name": v.name,
                             "franchise": v.franchise,
                             "venue_ref": v.venue_ref,
-                            "address": str(v.address) if v.address else None
+                            "address": str(v.address) if v.address else None,
+                            "location": {
+                                "lat": v.address.location.latitude,
+                                "lng": v.address.location.longitude
+                            } if v.address and v.address.location else None
                         }
                         for v in result[:limit]
                     ]
@@ -169,7 +173,11 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                             "name": v.name,
                             "franchise": v.franchise,
                             "venue_ref": v.venue_ref,
-                            "address": str(v.address) if v.address else None
+                            "address": str(v.address) if v.address else None,
+                            "location": {
+                                "lat": v.address.location.latitude,
+                                "lng": v.address.location.longitude
+                            } if v.address and v.address.location else None
                         }
                         for v in matching[:limit]
                     ]
@@ -193,7 +201,11 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                     "name": result.name,
                     "can_place_order": result.can_place_order,
                     "venue_can_order": result.venue_can_order,
-                    "sales_areas": result.sales_areas
+                    "sales_areas": result.sales_areas,
+                    "location": {
+                        "lat": venue.address.location.latitude,
+                        "lng": venue.address.location.longitude
+                    } if venue.address and venue.address.location else None
                 }, indent=2, default=str)
             )]
 
