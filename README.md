@@ -8,6 +8,11 @@ This is a Python port of the original TypeScript package by [Joss Bird](https://
 
 **THIS SOFTWARE IS PROVIDED FOR EDUCATIONAL AND INFORMATIONAL PURPOSES ONLY.**
 
+This is a Python port of the original TypeScript package created by [Joss Bird](https://github.com/slack2450/wetherspoons-api). The original work serves as the foundation for this implementation.
+
+**Research Purposes Only:**
+This software is intended solely for research, educational, and informational purposes. There is no intention to harm JD Wetherspoon plc, interfere with their business operations, or violate their terms of service.
+
 The authors and contributors of this software:
 - Are not affiliated with, endorsed by, or connected to JD Wetherspoon plc in any way
 - Do not authorize or condone the use of this software for any purpose that may violate terms of service or applicable laws
