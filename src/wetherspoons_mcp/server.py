@@ -4,6 +4,7 @@ MCP Server for Wetherspoons API
 
 import asyncio
 import json
+import math
 from typing import Any
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -13,6 +14,26 @@ from wetherspoons_api import venues, get_venue, get_menus, get_menu, get_drinks
 
 # Create MCP server
 app = Server("wetherspoons-api")
+
+
+def _haversine_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    """
+    Calculate the great circle distance between two points
+    on the earth (specified in decimal degrees) in kilometers.
+    """
+    # Convert decimal degrees to radians
+    lat1, lng1, lat2, lng2 = map(math.radians, [lat1, lng1, lat2, lng2])
+
+    # Haversine formula
+    dlat = lat2 - lat1
+    dlng = lng2 - lng1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlng/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+
+    # Radius of earth in kilometers
+    r = 6371
+
+    return c * r
 
 
 @app.list_tools()
@@ -52,6 +73,28 @@ async def list_tools() -> list[Tool]:
                     }
                 },
                 "required": ["name"]
+            }
+        ),
+        Tool(
+            name="find_nearest_venues",
+            description="Find Wetherspoons venues nearest to a given latitude/longitude location. Returns venues sorted by distance.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "lat": {
+                        "type": "number",
+                        "description": "Latitude of your location (e.g., 51.5074 for London)"
+                    },
+                    "lng": {
+                        "type": "number",
+                        "description": "Longitude of your location (e.g., -0.1278 for London)"
+                    },
+                    "limit": {
+                        "type": "number",
+                        "description": "Maximum number of venues to return (default: 10)"
+                    }
+                },
+                "required": ["lat", "lng"]
             }
         ),
         Tool(
@@ -180,6 +223,52 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                             } if v.address and v.address.location else None
                         }
                         for v in matching[:limit]
+                    ]
+                }, indent=2)
+            )]
+
+        elif name == "find_nearest_venues":
+            user_lat = arguments["lat"]
+            user_lng = arguments["lng"]
+            limit = arguments.get("limit", 10)
+            
+            # Get all venues with location
+            all_venues = venues()
+            venues_with_location = [
+                v for v in all_venues 
+                if v.address and v.address.location
+            ]
+            
+            # Calculate distance for each venue
+            venues_with_distance = []
+            for venue in venues_with_location:
+                venue_lat = venue.address.location.latitude
+                venue_lng = venue.address.location.longitude
+                distance_km = _haversine_distance(user_lat, user_lng, venue_lat, venue_lng)
+                venues_with_distance.append((venue, distance_km))
+            
+            # Sort by distance and take nearest
+            venues_with_distance.sort(key=lambda x: x[1])
+            nearest = venues_with_distance[:limit]
+            
+            return [TextContent(
+                type="text",
+                text=json.dumps({
+                    "user_location": {"lat": user_lat, "lng": user_lng},
+                    "total_venues_checked": len(venues_with_location),
+                    "venues": [
+                        {
+                            "name": v.name,
+                            "franchise": v.franchise,
+                            "venue_ref": v.venue_ref,
+                            "address": str(v.address) if v.address else None,
+                            "location": {
+                                "lat": v.address.location.latitude,
+                                "lng": v.address.location.longitude
+                            },
+                            "distance_km": round(distance, 2)
+                        }
+                        for v, distance in nearest
                     ]
                 }, indent=2)
             )]

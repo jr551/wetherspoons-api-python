@@ -19,12 +19,13 @@ class TestMCPServer:
         
         assert "get_venues" in tool_names
         assert "search_venues" in tool_names
+        assert "find_nearest_venues" in tool_names
         assert "get_venue_details" in tool_names
         assert "get_menus" in tool_names
         assert "get_menu_details" in tool_names
         assert "get_drinks" in tool_names
         
-        assert len(tools) == 6
+        assert len(tools) == 7
 
     @pytest.mark.asyncio
     @patch("wetherspoons_mcp.server.venues")
@@ -86,6 +87,39 @@ class TestMCPServer:
         data = json.loads(result[0].text)
         assert "error" in data
         assert "Venue not found" in data["error"]
+
+    @pytest.mark.asyncio
+    @patch("wetherspoons_mcp.server.venues")
+    async def test_find_nearest_venues_tool(self, mock_venues):
+        """Test find_nearest_venues tool returns venues sorted by distance"""
+        # Create mock venue with location
+        mock_venue = Mock()
+        mock_venue.name = "The Watchman"
+        mock_venue.franchise = "lloyds"
+        mock_venue.venue_ref = 5447
+        
+        # Mock address with location
+        mock_location = Mock()
+        mock_location.latitude = 51.4
+        mock_location.longitude = -0.26
+        
+        mock_address = Mock()
+        mock_address.location = mock_location
+        
+        mock_venue.address = mock_address
+        
+        mock_venues.return_value = [mock_venue]
+        
+        # Search near London
+        result = await call_tool("find_nearest_venues", {"lat": 51.5, "lng": -0.12, "limit": 5})
+        
+        assert len(result) == 1
+        data = json.loads(result[0].text)
+        assert "user_location" in data
+        assert data["user_location"]["lat"] == 51.5
+        assert len(data["venues"]) == 1
+        assert data["venues"][0]["name"] == "The Watchman"
+        assert "distance_km" in data["venues"][0]
 
     @pytest.mark.asyncio
     async def test_call_tool_with_unknown_tool_returns_error(self):
