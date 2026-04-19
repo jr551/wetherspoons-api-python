@@ -21,10 +21,37 @@ async def list_tools() -> list[Tool]:
     return [
         Tool(
             name="get_venues",
-            description="Fetch all Wetherspoons venues that are currently open",
+            description="Fetch Wetherspoons venues. Optionally filter by name search and control how many are returned.",
             inputSchema={
                 "type": "object",
-                "properties": {},
+                "properties": {
+                    "search": {
+                        "type": "string",
+                        "description": "Optional: Search for venues by name (case-insensitive partial match)"
+                    },
+                    "limit": {
+                        "type": "number",
+                        "description": "Maximum number of venues to return (default: 50, max: 796)"
+                    }
+                },
+            }
+        ),
+        Tool(
+            name="search_venues",
+            description="Search for a specific venue by name and return matching results with full venue references",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Venue name or partial name to search for"
+                    },
+                    "limit": {
+                        "type": "number",
+                        "description": "Maximum number of results (default: 10)"
+                    }
+                },
+                "required": ["name"]
             }
         ),
         Tool(
@@ -100,10 +127,18 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     try:
         if name == "get_venues":
             result = venues()
+            search = arguments.get("search", "").lower()
+            limit = min(arguments.get("limit", 50), 796)
+            
+            # Filter by search term if provided
+            if search:
+                result = [v for v in result if search in v.name.lower()]
+            
             return [TextContent(
                 type="text",
                 text=json.dumps({
-                    "count": len(result),
+                    "total_count": len(result),
+                    "showing": min(limit, len(result)),
                     "venues": [
                         {
                             "name": v.name,
@@ -111,7 +146,32 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                             "venue_ref": v.venue_ref,
                             "address": str(v.address) if v.address else None
                         }
-                        for v in result[:10]  # Return first 10
+                        for v in result[:limit]
+                    ]
+                }, indent=2)
+            )]
+
+        elif name == "search_venues":
+            search_name = arguments.get("name", "").lower()
+            limit = arguments.get("limit", 10)
+            result = venues()
+            
+            # Find matching venues
+            matching = [v for v in result if search_name in v.name.lower()]
+            
+            return [TextContent(
+                type="text",
+                text=json.dumps({
+                    "search": arguments.get("name"),
+                    "matches_found": len(matching),
+                    "venues": [
+                        {
+                            "name": v.name,
+                            "franchise": v.franchise,
+                            "venue_ref": v.venue_ref,
+                            "address": str(v.address) if v.address else None
+                        }
+                        for v in matching[:limit]
                     ]
                 }, indent=2)
             )]
