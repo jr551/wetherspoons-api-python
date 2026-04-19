@@ -33,26 +33,14 @@ pip install wetherspoons-api-python
 
 This package includes an MCP (Model Context Protocol) server that provides an open standard interface for the Wetherspoons API. MCP is compatible with various AI systems, not just Claude.
 
-**Quick start (uvx):**
+### Quick Start
 
+**Using uvx (recommended):**
 ```bash
 uvx --from wetherspoons-api-python[mcp] wetherspoons-mcp
 ```
 
-**Available MCP tools:**
-- **`search_venues`** - **✅ RECOMMENDED FIRST:** Search for venues by name (e.g., "The Watchman") - returns venue_ref for other tools
-- `get_venues` - ⚠️ Returns up to 796 venues! Use with `search` param to filter, or use `search_venues` instead
-- `get_venue_details` - Get detailed venue information (requires venue_ref from search)
-- `get_menus` - Fetch menus for a sales area
-- `get_menu_details` - Get detailed menu information
-- `get_drinks` - Fetch drinks with price per unit calculation
-
-**Recommended workflow:**
-1. Use `search_venues(name: "The Watchman")` to find the venue and get its `venue_ref` (e.g., 5447)
-2. Use `get_venue_details(venue_ref: 5447)` to get venue details
-3. Use `get_drinks(venue_ref: 5447, sales_area_id: ...)` to get drink prices
-
-**MCP client configuration:**
+**MCP Client Configuration:**
 ```json
 {
   "mcpServers": {
@@ -64,13 +52,255 @@ uvx --from wetherspoons-api-python[mcp] wetherspoons-mcp
 }
 ```
 
-Or for development:
+### Available MCP Tools
 
-```bash
-git clone https://github.com/slack2450/wetherspoons-api.git
-cd wetherspoons-api-python
-pip install -e .
+#### 1. search_venues ✅ **RECOMMENDED FIRST**
+Search for venues by name. Returns matching venues with venue_ref needed for other tools.
+
+**Parameters:**
+- `name` (required): Venue name or partial name (e.g., "The Watchman")
+- `limit` (optional): Maximum results (default: 10)
+
+**Example:**
+```json
+{
+  "name": "The Watchman",
+  "limit": 5
+}
 ```
+
+**Response:**
+```json
+{
+  "search": "The Watchman",
+  "matches_found": 1,
+  "venues": [
+    {
+      "name": "The Watchman",
+      "franchise": "lloyds",
+      "venue_ref": 5447,
+      "address": "The Old Post Office...",
+      "location": {"lat": 51.4015, "lng": -0.2582}
+    }
+  ]
+}
+```
+
+#### 2. get_venues
+⚠️ **WARNING:** Returns up to 796 venues. Use with `search` param to filter.
+
+**Parameters:**
+- `search` (optional): Filter by name (case-insensitive)
+- `limit` (optional): Max venues (default: 50, max: 796)
+
+**Example:**
+```json
+{
+  "search": "London",
+  "limit": 20
+}
+```
+
+#### 3. find_nearest_venues
+Find venues nearest to GPS coordinates. Returns venues sorted by distance.
+
+**Parameters:**
+- `lat` (required): Latitude (e.g., 51.5074 for London)
+- `lng` (required): Longitude (e.g., -0.1278 for London)
+- `limit` (optional): Max results (default: 10)
+
+**Example:**
+```json
+{
+  "lat": 51.5,
+  "lng": -0.12,
+  "limit": 5
+}
+```
+
+**Response:**
+```json
+{
+  "user_location": {"lat": 51.5, "lng": -0.12},
+  "venues": [
+    {
+      "name": "The Lion & The Unicorn",
+      "venue_ref": 1234,
+      "location": {"lat": 51.501, "lng": -0.125},
+      "distance_km": 0.65
+    }
+  ]
+}
+```
+
+#### 4. get_venue_details
+Get detailed venue information including sales areas and ordering capabilities.
+
+**Parameters:**
+- `venue_ref` (required): Venue reference number from search
+
+**Example:**
+```json
+{
+  "venue_ref": 5447
+}
+```
+
+**Response:**
+```json
+{
+  "name": "The Watchman",
+  "can_place_order": true,
+  "venue_can_order": true,
+  "sales_areas": [
+    {"id": 1234, "name": "Bar", "isMenuAvailable": true}
+  ],
+  "location": {"lat": 51.4015, "lng": -0.2582}
+}
+```
+
+#### 5. get_menus
+Fetch all menus for a specific sales area in a venue.
+
+**Parameters:**
+- `venue_ref` (required): Venue reference
+- `sales_area_id` (required): Sales area ID from venue details
+
+**Example:**
+```json
+{
+  "venue_ref": 5447,
+  "sales_area_id": 1234
+}
+```
+
+**Response:**
+```json
+[
+  {"name": "Drinks", "can_order": true, "id": 5678},
+  {"name": "Food", "can_order": true, "id": 5679}
+]
+```
+
+#### 6. get_menu_details
+Get detailed menu information including all items with prices.
+
+**Parameters:**
+- `menu_id` (required): Menu ID from get_menus
+
+**Example:**
+```json
+{
+  "menu_id": 5678
+}
+```
+
+**Response:**
+```json
+{
+  "menu_name": "Food",
+  "categories_count": 17,
+  "categories": [
+    {
+      "category": "Deli Deals",
+      "item_count": 5,
+      "items": [
+        {
+          "name": "Cheeseburger",
+          "price_pounds": 5.99,
+          "price_pence": 599,
+          "price_gbp": "£5.99",
+          "description": "Classic beef burger..."
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### 7. get_drinks
+Fetch all drinks with alcohol units and price per unit analysis.
+
+**Parameters:**
+- `venue_ref` (required): Venue reference
+- `sales_area_id` (required): Sales area ID
+
+**Example:**
+```json
+{
+  "venue_ref": 5447,
+  "sales_area_id": 1234
+}
+```
+
+**Response:**
+```json
+{
+  "count": 171,
+  "drinks": [
+    {
+      "name": "Ruddles Best",
+      "price_pounds": 2.49,
+      "price_pence": 249,
+      "units": 2.27,
+      "price_per_unit_pence": 109.69,
+      "price_gbp": "£2.49"
+    }
+  ]
+}
+```
+
+### Recommended Workflow
+
+**1. Find a Venue:**
+Use `search_venues` to find the venue and get its `venue_ref`.
+
+**2. Get Venue Details:**
+Use `get_venue_details` with the `venue_ref` to get sales area IDs.
+
+**3. Get Drinks/Food:**
+Use `get_drinks` or `get_menu_details` with `venue_ref` and `sales_area_id`.
+
+### Complete Example
+
+**Finding best value drinks at a specific pub:**
+
+```json
+// Step 1: Search for the venue
+{
+  "tool": "search_venues",
+  "arguments": {
+    "name": "The Watchman"
+  }
+}
+// Returns: venue_ref = 5447
+
+// Step 2: Get venue details to find sales_area_id
+{
+  "tool": "get_venue_details",
+  "arguments": {
+    "venue_ref": 5447
+  }
+}
+// Returns: sales_areas = [{"id": 1234, "name": "Bar"}]
+
+// Step 3: Get drinks sorted by best value
+{
+  "tool": "get_drinks",
+  "arguments": {
+    "venue_ref": 5447,
+    "sales_area_id": 1234
+  }
+}
+// Returns: List of drinks with price per unit, sorted by value
+```
+
+### Notes
+
+- All prices are returned in **pounds** (e.g., 1.62 = £1.62), not pence
+- Alcohol units use UK standard: 1 unit = 10ml pure alcohol
+- Drinks are sorted by price per unit (best value first)
+- GPS coordinates use WGS84 (decimal degrees)
 
 ## Features
 
