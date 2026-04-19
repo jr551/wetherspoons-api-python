@@ -4,6 +4,14 @@ This is an MCP (Model Context Protocol) server for the Wetherspoons API. MCP is 
 
 ## Installation
 
+No installation required! Use uvx to run the server with built-in dependencies:
+
+```bash
+uvx mcp-server/mcp-server.py
+```
+
+Or if you prefer traditional installation:
+
 ```bash
 # Install MCP SDK
 pip install mcp
@@ -14,7 +22,13 @@ git clone https://github.com/jr551/wetherspoons-api-python.git /tmp/wetherspoons
 
 ## Usage
 
-### Running the server
+### Running the server (recommended - uvx)
+
+```bash
+uvx mcp-server/mcp-server.py
+```
+
+### Running the server (traditional)
 
 ```bash
 python mcp-server.py

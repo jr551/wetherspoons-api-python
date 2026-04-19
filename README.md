@@ -58,7 +58,13 @@ Claude will automatically use the skill to fetch and analyze the data.
 
 This repository also includes an MCP (Model Context Protocol) server at `mcp-server/` that provides an open standard interface for the Wetherspoons API. MCP is compatible with various AI systems, not just Claude.
 
-**To use the MCP server:**
+**To use the MCP server (recommended - uvx):**
+
+```bash
+uvx mcp-server/mcp-server.py
+```
+
+**Or traditional installation:**
 
 ```bash
 # Install MCP SDK
