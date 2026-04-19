@@ -93,7 +93,7 @@ class Drink(BaseModel):
     name: str
     units: float
     product_id: int = Field(alias="productId")
-    price: float  # Price in pence (can be float from API)
+    price: float  # Price in pounds (e.g., 1.62 = £1.62)
     ppu: float  # price per unit
 
 

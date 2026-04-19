@@ -233,16 +233,19 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                     for item in item_group.get("items", []):
                         # Get price from first portion option
                         portions = item.get("portionOptions", [])
-                        price = None
+                        price_pounds = None
+                        price_pence = None
                         price_gbp = None
                         if portions:
-                            price = portions[0].get("value", {}).get("price", {}).get("value")
-                            if price:
-                                price_gbp = f"£{price/100:.2f}"
+                            price_pounds = portions[0].get("value", {}).get("price", {}).get("value")
+                            if price_pounds:
+                                price_pence = int(price_pounds * 100)
+                                price_gbp = f"£{price_pounds:.2f}"
                         
                         items.append({
                             "name": item.get("name"),
-                            "price_pence": price,
+                            "price_pounds": price_pounds,
+                            "price_pence": price_pence,
                             "price_gbp": price_gbp,
                             "description": item.get("description", "")[:100]  # Truncate long descriptions
                         })
@@ -282,10 +285,11 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                     "drinks": [
                         {
                             "name": d.name,
-                            "price_pence": d.price,
+                            "price_pounds": d.price,
+                            "price_pence": int(d.price * 100),
                             "units": d.units,
                             "price_per_unit_pence": round(d.ppu, 2),
-                            "price_gbp": f"£{d.price/100:.2f}"
+                            "price_gbp": f"£{d.price:.2f}"
                         }
                         for d in result[:10]  # Return top 10 best value
                     ]

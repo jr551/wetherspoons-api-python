@@ -58,9 +58,9 @@ def print_venue_drinks(venue, venue_name):
     print("\nTop 5 best value drinks:")
     for i, d in enumerate(drinks[:5], 1):
         print(f"{i}. {d.name}")
-        print(f"   Price: £{d.price/100:.2f}")
+        print(f"   Price: £{d.price:.2f}")
         print(f"   Units: {d.units:.2f}")
-        print(f"   Price per unit: £{d.ppu/100:.2f}")
+        print(f"   Price per unit: £{d.ppu:.2f}")
     
     return drinks
 
@@ -86,8 +86,8 @@ def main():
         avg_price_per_unit = sum(d.ppu for d in drinks) / len(drinks) if drinks else 0
         print(f"\n{venue_name}:")
         print(f"  Total drinks: {len(drinks)}")
-        print(f"  Avg price per unit: £{avg_price_per_unit/100:.2f}")
-        print(f"  Best value drink: {drinks[0].name if drinks else 'N/A'} (£{drinks[0].ppu/100:.2f}/unit)")
+        print(f"  Avg price per unit: £{avg_price_per_unit:.2f}")
+        print(f"  Best value drink: {drinks[0].name if drinks else 'N/A'} (£{drinks[0].ppu:.2f}/unit)")
 
 if __name__ == "__main__":
     main()
