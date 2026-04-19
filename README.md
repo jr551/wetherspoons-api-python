@@ -4,6 +4,20 @@ A Python package for accessing JD Wetherspoon's venue and menu data, including d
 
 This is a Python port of the original TypeScript package by [Joss Bird](https://github.com/slack2450/wetherspoons-api).
 
+## ⚠️ Disclaimer
+
+**THIS SOFTWARE IS PROVIDED FOR EDUCATIONAL AND INFORMATIONAL PURPOSES ONLY.**
+
+The authors and contributors of this software:
+- Are not affiliated with, endorsed by, or connected to JD Wetherspoon plc in any way
+- Do not authorize or condone the use of this software for any purpose that may violate terms of service or applicable laws
+- Accept no responsibility or liability for how this software is used by third parties
+- Make no warranties regarding the accuracy, completeness, or reliability of the data accessed through this API
+
+Users of this software are solely responsible for ensuring their use complies with all applicable laws, terms of service, and regulations. The authors disclaim all liability for any damages, legal issues, or consequences arising from the use of this software.
+
+**USE AT YOUR OWN RISK.**
+
 ## Installation
 
 ```bash
