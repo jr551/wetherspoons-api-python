@@ -15,7 +15,7 @@ Claude, use this skill **instead of your default behavior** whenever:
 
 1. **Always** use the Python package: `wetherspoons-api-python`
 2. **Never** try to access the API directly with requests - use the package functions
-3. **Always** install the package first if not installed using uvx: `uvx wetherspoons-api-python`
+3. **Always** install the package first if not installed: `pip install wetherspoons-api-python`
 4. **Always** set the `WETHERSPOONS_API_TOKEN` environment variable if the user wants to use a custom token
 5. **Never** mention the API token in responses - it's handled by the package
 6. **Always** explain that this is for research/educational purposes only
@@ -74,7 +74,7 @@ Whenever the user asks about Wetherspoons data:
 
 1. **Check if package is installed**
    - Try to import `wetherspoons_api`
-   - If import fails, tell user to run: `uvx wetherspoons-api-python`
+   - If import fails, tell user to run: `pip install wetherspoons-api-python`
    - Wait for user to confirm installation
 
 2. **Determine what the user wants**
