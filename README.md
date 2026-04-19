@@ -54,6 +54,41 @@ Just ask Claude questions like:
 
 Claude will automatically use the skill to fetch and analyze the data.
 
+## MCP Server (Open Standard)
+
+This repository also includes an MCP (Model Context Protocol) server at `mcp-server/` that provides an open standard interface for the Wetherspoons API. MCP is compatible with various AI systems, not just Claude.
+
+**To use the MCP server:**
+
+```bash
+# Install MCP SDK
+pip install mcp
+
+# Run the server
+python mcp-server/mcp-server.py
+```
+
+**Available MCP tools:**
+- `get_venues` - Fetch all Wetherspoons venues
+- `get_venue_details` - Get detailed venue information
+- `get_menus` - Fetch menus for a sales area
+- `get_menu_details` - Get detailed menu information
+- `get_drinks` - Fetch drinks with price per unit calculation
+
+**MCP client configuration:**
+```json
+{
+  "mcpServers": {
+    "wetherspoons": {
+      "command": "python",
+      "args": ["/path/to/mcp-server/mcp-server.py"]
+    }
+  }
+}
+```
+
+See `mcp-server/README.md` for more details.
+
 Or for development:
 
 ```bash
