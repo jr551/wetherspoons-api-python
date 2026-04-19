@@ -21,24 +21,24 @@ async def list_tools() -> list[Tool]:
     return [
         Tool(
             name="get_venues",
-            description="Fetch Wetherspoons venues. Optionally filter by name search and control how many are returned.",
+            description="⚠️ WARNING: Returns up to 796 venues! Use search_venues tool first to find specific venues by name. Only use this tool when you need a large list with optional filters (search param for name filtering, limit param to cap results).",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "search": {
                         "type": "string",
-                        "description": "Optional: Search for venues by name (case-insensitive partial match)"
+                        "description": "Filter venues by name (case-insensitive partial match). HIGHLY RECOMMENDED to avoid 796 results."
                     },
                     "limit": {
                         "type": "number",
-                        "description": "Maximum number of venues to return (default: 50, max: 796)"
+                        "description": "Maximum venues to return (default: 50, max: 796). Reduce if filtering."
                     }
                 },
             }
         ),
         Tool(
             name="search_venues",
-            description="Search for a specific venue by name and return matching results with full venue references",
+            description="✅ RECOMMENDED FIRST STEP: Search for venues by name (e.g., 'The Watchman'). Returns matching venues with venue_ref needed for other tools. Always use this before get_venues when looking for a specific venue.",
             inputSchema={
                 "type": "object",
                 "properties": {

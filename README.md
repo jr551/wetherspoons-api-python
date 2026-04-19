@@ -40,11 +40,17 @@ uvx --from wetherspoons-api-python[mcp] wetherspoons-mcp
 ```
 
 **Available MCP tools:**
-- `get_venues` - Fetch all Wetherspoons venues
-- `get_venue_details` - Get detailed venue information
+- **`search_venues`** - **✅ RECOMMENDED FIRST:** Search for venues by name (e.g., "The Watchman") - returns venue_ref for other tools
+- `get_venues` - ⚠️ Returns up to 796 venues! Use with `search` param to filter, or use `search_venues` instead
+- `get_venue_details` - Get detailed venue information (requires venue_ref from search)
 - `get_menus` - Fetch menus for a sales area
 - `get_menu_details` - Get detailed menu information
 - `get_drinks` - Fetch drinks with price per unit calculation
+
+**Recommended workflow:**
+1. Use `search_venues(name: "The Watchman")` to find the venue and get its `venue_ref` (e.g., 5447)
+2. Use `get_venue_details(venue_ref: 5447)` to get venue details
+3. Use `get_drinks(venue_ref: 5447, sales_area_id: ...)` to get drink prices
 
 **MCP client configuration:**
 ```json
