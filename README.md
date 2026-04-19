@@ -36,6 +36,7 @@ This repository includes a standalone MCP (Model Context Protocol) server script
 **Quick start (uvx):**
 
 ```bash
+# From the repository root
 uvx --with wetherspoons-api-python --with mcp python mcp-server.py
 ```
 
@@ -52,11 +53,13 @@ uvx --with wetherspoons-api-python --with mcp python mcp-server.py
   "mcpServers": {
     "wetherspoons": {
       "command": "uvx",
-      "args": ["--with", "wetherspoons-api-python", "--with", "mcp", "python", "/path/to/mcp-server.py"]
+      "args": ["--with", "wetherspoons-api-python", "--with", "mcp", "python", "/absolute/path/to/mcp-server.py"]
     }
   }
 }
 ```
+
+**Note:** The MCP client configuration requires an absolute path to `mcp-server.py`. Clone this repository first and update the path accordingly.
 
 Or for development:
 
