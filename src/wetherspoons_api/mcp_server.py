@@ -11,7 +11,6 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 import sys
-sys.path.insert(0, '/tmp/wetherspoons-api-python/src')
 
 from wetherspoons_api import venues, get_venue, get_menus, get_menu, get_drinks
 

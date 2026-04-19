@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="wetherspoons-api-python",
-    version="1.0.0",
+    version="1.1.0",
     author="Ported from original by Joss Bird",
     description="A Python package for accessing JD Wetherspoon's venue and menu data",
     long_description=long_description,
@@ -34,6 +34,14 @@ setup(
         "dev": [
             "pytest>=7.4.0",
             "pytest-mock>=3.12.0",
+        ],
+        "mcp": [
+            "mcp",
+        ],
+    },
+    entry_points={
+        "console_scripts": [
+            "wetherspoons-mcp=wetherspoons_api.mcp_server:main",
         ],
     },
 )

@@ -31,12 +31,12 @@ pip install wetherspoons-api-python
 
 ## MCP Server (Open Standard)
 
-This repository includes an MCP (Model Context Protocol) server that provides an open standard interface for the Wetherspoons API. MCP is compatible with various AI systems, not just Claude.
+This package includes an MCP (Model Context Protocol) server that provides an open standard interface for the Wetherspoons API. MCP is compatible with various AI systems, not just Claude.
 
 **Quick start (recommended - uvx):**
 
 ```bash
-uvx mcp-server/mcp-server.py
+uvx wetherspoons-api-python[mcp] wetherspoons-mcp
 ```
 
 **Available MCP tools:**
@@ -52,13 +52,11 @@ uvx mcp-server/mcp-server.py
   "mcpServers": {
     "wetherspoons": {
       "command": "uvx",
-      "args": ["/path/to/mcp-server/mcp-server.py"]
+      "args": ["wetherspoons-api-python[mcp]", "wetherspoons-mcp"]
     }
   }
 }
 ```
-
-See `mcp-server/README.md` for more details.
 
 Or for development:
 
