@@ -149,6 +149,65 @@ if drinks_menu:
     print(detailed_menu.data['categories'])
 ```
 
+## Common Pitfalls
+
+When using this API, watch out for these common mistakes:
+
+### 1. API is Synchronous (Not Async)
+
+❌ **Wrong:**
+```python
+# Don't use async/await
+venues = await venues()  # TypeError: object list can't be used in 'await' expression
+```
+
+✅ **Correct:**
+```python
+# All API functions are synchronous
+from wetherspoons_api import venues
+all_venues = venues()
+```
+
+### 2. Python Uses Snake_Case (Not CamelCase)
+
+❌ **Wrong:**
+```python
+details.salesAreas  # AttributeError: 'DetailedVenue' object has no attribute 'salesAreas'
+```
+
+✅ **Correct:**
+```python
+details.sales_areas  # Snake case with underscores
+```
+
+### 3. sales_areas Returns Dictionaries (Not Objects)
+
+❌ **Wrong:**
+```python
+sales_area = details.sales_areas[0]
+sales_area.name  # AttributeError: 'dict' object has no attribute 'name'
+```
+
+✅ **Correct:**
+```python
+sales_area = details.sales_areas[0]
+sales_area['id']  # Use dict key access: ['id'], ['name'], etc.
+```
+
+### 4. get_drinks Takes One Argument (Not Two)
+
+❌ **Wrong:**
+```python
+# Don't pass sales_area_id separately
+drinks = get_drinks(venue, sales_area_id)  # TypeError: takes 1 positional argument but 2 were given
+```
+
+✅ **Correct:**
+```python
+# Pass only the venue object - get_drinks handles sales area lookup internally
+drinks = get_drinks(venue)
+```
+
 ## API Reference
 
 ### Functions
