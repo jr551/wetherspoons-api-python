@@ -13,172 +13,28 @@ Claude, use this skill **instead of your default behavior** whenever:
 
 ## Hard rules (never break these)
 
-1. **Always** use the inline Python code provided in this skill - no installation needed
-2. **Never** try to install the package - use the code directly
-3. **Always** set the `WETHERSPOONS_API_TOKEN` environment variable if the user wants to use a custom token
-4. **Never** mention the API token in responses - it's handled by the code
-5. **Always** explain that this is for research/educational purposes only
-6. **Never** encourage using this for commercial purposes or to harm Wetherspoons
+1. **Always** clone the repository to /tmp and use the code from there
+2. **Never** try to install the package - use the code from /tmp
+3. **Always** clone to `/tmp/wetherspoons-api-python`
+4. **Always** set the `WETHERSPOONS_API_TOKEN` environment variable if the user wants to use a custom token
+5. **Never** mention the API token in responses - it's handled by the code
+6. **Always** explain that this is for research/educational purposes only
+7. **Never** encourage using this for commercial purposes or to harm Wetherspoons
 
-## Inline Python code
+## Repository checkout
 
-Use this code directly in Python - no installation required:
+Clone the repository to /tmp and use the code from there:
+
+```bash
+git clone https://github.com/jr551/wetherspoons-api-python.git /tmp/wetherspoons-api-python
+```
+
+Then import and use the functions from the cloned code:
 
 ```python
-import requests
-import random
-import time
-from typing import List, Optional
-
-API_ENDPOINT = "https://ca.jdw-apps.net/api/v0.1"
-API_TOKEN = "1|SFS9MMnn5deflq0BMcUTSijwSMBB4mc7NSG2rOhqb2765466"
-
-# User agent rotation for anti-detection
-USER_AGENTS = [
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-    "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
-]
-
-_last_request_time = 0
-
-def _rate_limit():
-    """Apply rate limiting with random delay"""
-    global _last_request_time
-    current_time = time.time()
-    time_since_last = current_time - _last_request_time
-    
-    if time_since_last < 1.0:
-        delay = random.uniform(1.0, 3.0)
-        time.sleep(delay)
-    
-    _last_request_time = time.time()
-
-def _request(path: str) -> dict:
-    """Make a request to the Wetherspoons API"""
-    _rate_limit()
-    
-    headers = {
-        "Authorization": f"Bearer {API_TOKEN}",
-        "User-Agent": random.choice(USER_AGENTS),
-    }
-    
-    response = requests.get(f"{API_ENDPOINT}{path}", headers=headers)
-    response.raise_for_status()
-    return response.json()
-
-def venues() -> List[dict]:
-    """Fetch all Wetherspoons venues"""
-    # Fetch globals to filter open venues
-    globals_response = requests.get(
-        "https://oandp-appmgr-prod.s3.eu-west-2.amazonaws.com/global.json"
-    )
-    globals_response.raise_for_status()
-    globals_data = globals_response.json()
-    
-    open_venue_ids = {v["identifier"] for v in globals_data.get("venues", [])}
-    
-    # Fetch venues from API
-    response = _request("/venues")
-    venues_data = response.get("data", [])
-    
-    # Filter to only open venues
-    open_venues = []
-    for venue_data in venues_data:
-        if venue_data.get("venueRef") in open_venue_ids:
-            open_venues.append(venue_data)
-    
-    return open_venues
-
-def get_venue(venue_ref: int) -> dict:
-    """Get detailed information about a specific venue"""
-    response = _request(f"/venues/{venue_ref}")
-    return response.get("data", {})
-
-def get_menus(venue_ref: int, sales_area_id: int) -> List[dict]:
-    """Fetch all menus for a specific sales area"""
-    response = _request(f"/venues/{venue_ref}/menus/{sales_area_id}")
-    return response.get("data", [])
-
-def get_menu(menu_id: int) -> dict:
-    """Get detailed menu information"""
-    response = _request(f"/menus/{menu_id}")
-    return response.get("data", {})
-
-def _strength_and_volume_to_units(strength: float, volume: float) -> float:
-    """Calculate alcohol units from strength and volume"""
-    return (strength * volume) / 1000
-
-def get_drinks(venue_ref: int, sales_area_id: int) -> List[dict]:
-    """Fetch all drinks with price per unit calculation"""
-    menus = get_menus(venue_ref, sales_area_id)
-    
-    drinks_menu = None
-    for menu in menus:
-        if menu.get("name") == "Drinks":
-            drinks_menu = menu
-            break
-    
-    if not drinks_menu:
-        return []
-    
-    menu_data = get_menu(drinks_menu.get("id"))
-    
-    drinks = []
-    for category in menu_data.get("data", {}).get("categories", []):
-        for item_group in category.get("itemGroups", []):
-            for product in item_group.get("items", []):
-                if product.get("itemType") != "product":
-                    continue
-                
-                best_ppu = float('inf')
-                best_portion = None
-                best_units = 0
-                
-                options = product.get("options", {}).get("portion", {}).get("options", [])
-                for portion in options:
-                    label = portion.get("label", "")
-                    value = portion.get("value", {})
-                    volume_description = value.get("volumeDescription")
-                    volume = value.get("volume")
-                    strength = value.get("strength")
-                    
-                    units = None
-                    if strength is not None and volume:
-                        units = _strength_and_volume_to_units(strength, volume)
-                    elif strength is not None and volume_description:
-                        # Parse volume from description (e.g., "500ml")
-                        import re
-                        match = re.search(r'(\d+)', volume_description)
-                        if match:
-                            vol = int(match.group(1))
-                            units = _strength_and_volume_to_units(strength, vol)
-                    elif strength is not None and label == "Single":
-                        units = _strength_and_volume_to_units(strength, 25)
-                    elif strength is not None and label == "Double":
-                        units = _strength_and_volume_to_units(strength, 50)
-                    
-                    if units is not None and units > 0:
-                        price_value = value.get("price", {}).get("value", 0)
-                        ppu = price_value / units
-                        
-                        if ppu < best_ppu:
-                            best_ppu = ppu
-                            best_portion = portion
-                            best_units = units
-                
-                if best_portion:
-                    drinks.append({
-                        "name": product.get("name", ""),
-                        "units": best_units,
-                        "price": best_portion.get("value", {}).get("price", {}).get("value", 0),
-                        "ppu": best_ppu,
-                    })
-    
-    # Sort by price per unit (best value first)
-    drinks.sort(key=lambda x: x["ppu"])
-    
-    return drinks
+import sys
+sys.path.insert(0, '/tmp/wetherspoons-api-python/src')
+from wetherspoons_api import venues, get_venue, get_menus, get_menu, get_drinks
 ```
 
 ## API functions available
@@ -232,28 +88,33 @@ Returns list of drinks sorted by price per unit (best value first):
 
 Whenever the user asks about Wetherspoons data:
 
-1. **Run the inline Python code**
-   - Execute the functions provided in the "Inline Python code" section
-   - No installation needed - just run the code directly
+1. **Clone the repository to /tmp**
+   - Run: `git clone https://github.com/jr551/wetherspoons-api-python.git /tmp/wetherspoons-api-python`
+   - If directory already exists, run: `cd /tmp/wetherspoons-api-python && git pull`
+   - This ensures you have the latest code
 
-2. **Determine what the user wants**
+2. **Import the functions**
+   - Add to Python path: `sys.path.insert(0, '/tmp/wetherspoons-api-python/src')`
+   - Import: `from wetherspoons_api import venues, get_venue, get_menus, get_menu, get_drinks`
+
+3. **Determine what the user wants**
    - If they want to find venues: call `venues()`
-   - If they want specific venue details: call `get_venue(venue_ref)`
-   - If they want menus: call `get_menus(venue_ref, sales_area_id)`
-   - If they want drinks with pricing: call `get_drinks(venue_ref, sales_area_id)`
+   - If they want specific venue details: call `get_venue(high_level_venue)`
+   - If they want menus: call `get_menus(detailed_venue, sales_area_id)`
+   - If they want drinks with pricing: call `get_drinks(high_level_venue)`
 
-3. **Fetch the data**
-   - Call the appropriate function from the inline code
+4. **Fetch the data**
+   - Call the appropriate function
    - Handle any errors gracefully
    - If rate limiting causes delays, inform the user
 
-4. **Present the results clearly**
+5. **Present the results clearly**
    - For venues: show name, location, and basic info
    - For drinks: show name, price, units, and price per unit
    - For comparisons: highlight the best value options
    - Use formatting (tables, bullet points) for readability
 
-5. **Add context when helpful**
+6. **Add context when helpful**
    - Explain what alcohol units mean (1 unit = 10ml pure alcohol)
    - Explain price per unit (lower = better value)
    - Mention that data is for research/educational purposes
@@ -265,7 +126,8 @@ Whenever the user asks about Wetherspoons data:
 User: "Show me all Wetherspoons venues"
 
 You must:
-- Run the inline Python code
+- Clone repo: `git clone https://github.com/jr551/wetherspoons-api-python.git /tmp/wetherspoons-api-python`
+- Import: `from wetherspoons_api import venues`
 - Call: `all_venues = venues()`
 - Show: Number of venues found
 - Show: First few venues with names and locations
@@ -276,11 +138,10 @@ You must:
 User: "What are the cheapest drinks at Wetherspoons?"
 
 You must:
-- Run the inline Python code
+- Clone repo: `git clone https://github.com/jr551/wetherspoons-api-python.git /tmp/wetherspoons-api-python`
+- Import: `from wetherspoons_api import venues, get_drinks`
 - Get first venue: `venue = venues()[0]`
-- Get venue_ref from venue: `venue_ref = venue.get("venueRef")`
-- Get sales_area_id: `sales_area_id = venue.get("salesAreas", [{}])[0].get("id")`
-- Get drinks: `drinks = get_drinks(venue_ref, sales_area_id)`
+- Get drinks: `drinks = get_drinks(venue)`
 - Show: Top 5-10 drinks with lowest price per unit
 - Include: Name, price in £, units, and price per unit
 - Explain: "Price per unit shows the best value - lower is better"
@@ -290,12 +151,11 @@ You must:
 User: "Show me the menu for The Moon Under Water"
 
 You must:
-- Run the inline Python code
+- Clone repo: `git clone https://github.com/jr551/wetherspoons-api-python.git /tmp/wetherspoons-api-python`
+- Import: `from wetherspoons_api import venues, get_venue, get_menus`
 - Find venue: Search venues for "Moon Under Water"
-- Get venue_ref: `venue_ref = venue.get("venueRef")`
-- Get venue details: `details = get_venue(venue_ref)`
-- Get sales_area_id: `sales_area_id = details.get("salesAreas", [{}])[0].get("id")`
-- Get menus: `menus = get_menus(venue_ref, sales_area_id)`
+- Get details: `details = get_venue(venue)`
+- Get menus: `menus = get_menus(details, sales_area_id)`
 - Show: Available menu names (Drinks, Food, etc.)
 - Offer to show detailed menu if requested
 
@@ -304,8 +164,9 @@ You must:
 User: "Compare the price per unit of different ales"
 
 You must:
-- Run the inline Python code
-- Get drinks using `get_drinks(venue_ref, sales_area_id)`
+- Clone repo: `git clone https://github.com/jr551/wetherspoons-api-python.git /tmp/wetherspoons-api-python`
+- Import: `from wetherspoons_api import venues, get_drinks`
+- Get drinks using `get_drinks(venue)`
 - Filter for drinks containing "ale" in name (case-insensitive)
 - Show comparison table with: Name, Price (£), Units, Price per unit (£)
 - Highlight the best value option
