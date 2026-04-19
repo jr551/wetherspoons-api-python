@@ -35,13 +35,5 @@ setup(
             "pytest>=7.4.0",
             "pytest-mock>=3.12.0",
         ],
-        "mcp": [
-            "mcp",
-        ],
-    },
-    entry_points={
-        "console_scripts": [
-            "wetherspoons-mcp=wetherspoons_api.mcp_server:main",
-        ],
     },
 )

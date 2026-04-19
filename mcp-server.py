@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-MCP Server for Wetherspoons API
-An open standard server that can be used with any MCP-compatible AI system
+Standalone MCP Server for Wetherspoons API
+Run with: uvx --with wetherspoons-api-python --with mcp python mcp-server.py
 """
 
 import asyncio
@@ -12,7 +12,12 @@ from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 import sys
 
-from wetherspoons_api import venues, get_venue, get_menus, get_menu, get_drinks
+# Import the library - it will be installed via uvx
+try:
+    from wetherspoons_api import venues, get_venue, get_menus, get_menu, get_drinks
+except ImportError:
+    print("Error: wetherspoons-api-python not installed. Run with: uvx --with wetherspoons-api-python --with mcp python mcp-server.py")
+    sys.exit(1)
 
 # Create MCP server
 app = Server("wetherspoons-api")
@@ -98,17 +103,6 @@ async def list_tools() -> list[Tool]:
 @app.call_tool()
 async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     """Handle tool calls"""
-    
-    # Ensure repo is cloned
-    import subprocess
-    import os
-    
-    if not os.path.exists('/tmp/wetherspoons-api-python'):
-        subprocess.run([
-            'git', 'clone',
-            'https://github.com/jr551/wetherspoons-api-python.git',
-            '/tmp/wetherspoons-api-python'
-        ], check=True)
     
     try:
         if name == "get_venues":
