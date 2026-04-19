@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
 """
-Standalone MCP Server for Wetherspoons API
-Run with: uvx --with wetherspoons-api-python --with mcp python mcp-server.py
+MCP Server for Wetherspoons API
 """
 
 import asyncio
@@ -10,17 +8,12 @@ from typing import Any
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
-import sys
 
-# Import the library - it will be installed via uvx
-try:
-    from wetherspoons_api import venues, get_venue, get_menus, get_menu, get_drinks
-except ImportError:
-    print("Error: wetherspoons-api-python not installed. Run with: uvx --with wetherspoons-api-python --with mcp python mcp-server.py")
-    sys.exit(1)
+from wetherspoons_api import venues, get_venue, get_menus, get_menu, get_drinks
 
 # Create MCP server
 app = Server("wetherspoons-api")
+
 
 @app.list_tools()
 async def list_tools() -> list[Tool]:
@@ -100,10 +93,10 @@ async def list_tools() -> list[Tool]:
         ),
     ]
 
+
 @app.call_tool()
 async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     """Handle tool calls"""
-    
     try:
         if name == "get_venues":
             result = venues()
@@ -122,7 +115,7 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                     ]
                 }, indent=2)
             )]
-        
+
         elif name == "get_venue_details":
             venue_ref = arguments["venue_ref"]
             # First get the high-level venue
@@ -143,7 +136,7 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                     "sales_areas": result.sales_areas
                 }, indent=2, default=str)
             )]
-        
+
         elif name == "get_menus":
             venue_ref = arguments["venue_ref"]
             sales_area_id = arguments["sales_area_id"]
@@ -167,7 +160,7 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                     for m in result
                 ], indent=2)
             )]
-        
+
         elif name == "get_menu_details":
             menu_id = arguments["menu_id"]
             result = get_menu(type('obj', (object,), {'id': menu_id}))
@@ -184,7 +177,7 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                     ]
                 }, indent=2)
             )]
-        
+
         elif name == "get_drinks":
             venue_ref = arguments["venue_ref"]
             sales_area_id = arguments["sales_area_id"]
@@ -213,18 +206,19 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                     ]
                 }, indent=2)
             )]
-        
+
         else:
             return [TextContent(
                 type="text",
                 text=json.dumps({"error": f"Unknown tool: {name}"}, indent=2)
             )]
-    
+
     except Exception as e:
         return [TextContent(
             type="text",
             text=json.dumps({"error": str(e)}, indent=2)
         )]
+
 
 async def main():
     """Run the MCP server"""
@@ -234,6 +228,3 @@ async def main():
             write_stream,
             app.create_initialization_options()
         )
-
-if __name__ == "__main__":
-    asyncio.run(main())
